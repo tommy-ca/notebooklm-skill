@@ -7,7 +7,8 @@ from pathlib import Path
 
 # Paths
 SKILL_DIR = Path(__file__).parent.parent
-DATA_DIR = SKILL_DIR / "data"
+# Use standardized data location for backward compatibility
+DATA_DIR = Path.home() / ".claude" / "skills" / "notebooklm" / "data"
 BROWSER_STATE_DIR = DATA_DIR / "browser_state"
 BROWSER_PROFILE_DIR = BROWSER_STATE_DIR / "browser_profile"
 STATE_FILE = BROWSER_STATE_DIR / "state.json"

@@ -1,0 +1,1 @@
+../../notebooklm/scripts/setup_environment.py

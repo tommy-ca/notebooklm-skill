@@ -9,6 +9,15 @@ import sys
 import subprocess
 from pathlib import Path
 
+# Security: Whitelist of allowed scripts to prevent command injection
+ALLOWED_SCRIPTS = {
+    'ask_question.py',
+    'notebook_manager.py',
+    'session_manager.py',
+    'auth_manager.py',
+    'cleanup_manager.py'
+}
+
 
 def get_venv_python():
     """Get the virtual environment Python executable"""
@@ -69,9 +78,21 @@ def main():
     if not script_name.endswith('.py'):
         script_name += '.py'
 
+    # Security: Validate script name against whitelist
+    if script_name not in ALLOWED_SCRIPTS:
+        print(f"❌ Invalid script: {script_name}")
+        print(f"   Allowed: {', '.join(sorted(ALLOWED_SCRIPTS))}")
+        sys.exit(1)
+
     # Get script path
     skill_dir = Path(__file__).parent.parent
-    script_path = skill_dir / "scripts" / script_name
+    script_path = (skill_dir / "scripts" / script_name).resolve()
+    scripts_dir = (skill_dir / "scripts").resolve()
+
+    # Security: Verify path is within scripts directory (prevent path traversal)
+    if not str(script_path).startswith(str(scripts_dir)):
+        print("❌ Security violation: Path traversal detected")
+        sys.exit(1)
 
     if not script_path.exists():
         print(f"❌ Script not found: {script_name}")

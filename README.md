@@ -1,17 +1,19 @@
 <div align="center">
 
-# NotebookLM Claude Code Skill
+# NotebookLM Claude Code Plugin
 
-**Let [Claude Code](https://github.com/anthropics/claude-code) chat directly with NotebookLM for source-grounded answers based exclusively on your uploaded documents**
+**Let [Claude Code](https://github.com/anthropics/claude-code) work with NotebookLM for source-grounded answers and automated notebook creation**
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-purple.svg)](https://www.anthropic.com/news/skills)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg)](https://www.anthropic.com/news/skills)
 [![Based on](https://img.shields.io/badge/Based%20on-NotebookLM%20MCP-green.svg)](https://github.com/PleasePrompto/notebooklm-mcp)
 [![GitHub](https://img.shields.io/github/stars/PleasePrompto/notebooklm-skill?style=social)](https://github.com/PleasePrompto/notebooklm-skill)
 
-> Use this skill to query your Google NotebookLM notebooks directly from Claude Code for source-grounded, citation-backed answers from Gemini. Browser automation, library management, persistent auth. Drastically reduced hallucinations - answers only from your uploaded documents.
+> **Two powerful skills in one plugin:**
+> - **Query notebooks** - Get source-grounded, citation-backed answers from your uploaded documents
+> - **YouTube research** - Automatically create NotebookLM notebooks from YouTube videos with Audio Overviews
 
-[Installation](#installation) • [Quick Start](#quick-start) • [Why NotebookLM](#why-notebooklm-not-local-rag) • [How It Works](#how-it-works) • [MCP Alternative](https://github.com/PleasePrompto/notebooklm-mcp)
+[Installation](#installation) • [Skills](#skills) • [Why NotebookLM](#why-notebooklm-not-local-rag) • [How It Works](#how-it-works) • [MCP Alternative](https://github.com/PleasePrompto/notebooklm-mcp)
 
 </div>
 
@@ -64,16 +66,48 @@ Your Task → Claude asks NotebookLM → Gemini synthesizes answer → Claude wr
 
 ---
 
+## Skills
+
+This plugin provides two complementary skills for working with NotebookLM:
+
+### 1. NotebookLM Query (`notebooklm`)
+
+Query your existing NotebookLM notebooks for source-grounded answers:
+- Ask questions about your uploaded documents
+- Get citation-backed responses exclusively from your sources
+- Manage notebook library with tags and descriptions
+- Persistent authentication with Google
+
+**Use cases:**
+- "What does my API documentation say about authentication?"
+- "Search my React notebook for hooks best practices"
+- "Check my workshop manual for brake fluid specifications"
+
+### 2. YouTube Research (`youtube-research`)
+
+Create NotebookLM notebooks from YouTube videos automatically:
+- Provide a YouTube URL
+- Optionally add research about people mentioned in the video
+- Generate Audio Overview automatically
+- Shares authentication with the main skill
+
+**Use cases:**
+- "Create a notebook from this YouTube interview"
+- "Research this video and generate an audio overview"
+- "Add this YouTube URL to NotebookLM with my notes"
+
+---
+
 ## Installation
 
 ### The simplest installation ever:
 
 ```bash
-# 1. Create skills directory (if it doesn't exist)
-mkdir -p ~/.claude/skills
+# 1. Create plugins directory (if it doesn't exist)
+mkdir -p ~/.claude/plugins
 
 # 2. Clone this repository
-cd ~/.claude/skills
+cd ~/.claude/plugins
 git clone https://github.com/PleasePrompto/notebooklm-skill notebooklm
 
 # 3. That's it! Open Claude Code and say:
@@ -160,14 +194,20 @@ This is a **Claude Code Skill** - a local folder containing instructions and scr
 ### Architecture
 
 ```
-~/.claude/skills/notebooklm/
-├── SKILL.md              # Instructions for Claude
-├── scripts/              # Python automation scripts
-│   ├── ask_question.py   # Query NotebookLM
-│   ├── notebook_manager.py # Library management
-│   └── auth_manager.py   # Google authentication
-├── .venv/                # Isolated Python environment (auto-created)
-└── data/                 # Local notebook library
+~/.claude/plugins/notebooklm/
+└── plugins/
+    └── notebooklm/
+        ├── .claude-plugin/
+        │   └── plugin.json   # Plugin manifest
+        └── skills/
+            └── notebooklm/
+                ├── SKILL.md              # Instructions for Claude
+                ├── scripts/              # Python automation scripts
+                │   ├── ask_question.py   # Query NotebookLM
+                │   ├── notebook_manager.py # Library management
+                │   └── auth_manager.py   # Google authentication
+                ├── .venv/                # Isolated Python environment (auto-created)
+                └── data/                 # Local notebook library
 ```
 
 When you mention NotebookLM or send a notebook URL, Claude:
@@ -269,6 +309,8 @@ All data is stored locally within the skill directory:
 └── browser_state/     - Browser cookies and session data
 ```
 
+**Note:** The data directory location (`~/.claude/skills/notebooklm/data/`) remains the same regardless of where the plugin is installed, ensuring backward compatibility and consistency across installations.
+
 **Important Security Note:**
 - The `data/` directory contains sensitive authentication data and personal notebooks
 - It's automatically excluded from git via `.gitignore`
@@ -330,7 +372,7 @@ Chrome runs locally on your machine. Your credentials never leave your computer.
 ### Skill not found
 ```bash
 # Make sure it's in the right location
-ls ~/.claude/skills/notebooklm/
+ls ~/.claude/plugins/notebooklm/plugins/notebooklm/skills/notebooklm/
 # Should show: SKILL.md, scripts/, etc.
 ```
 
@@ -343,7 +385,7 @@ Say: `"Clear NotebookLM browser data"`
 ### Dependencies issues
 ```bash
 # Manual reinstall if needed
-cd ~/.claude/skills/notebooklm
+cd ~/.claude/plugins/notebooklm/plugins/notebooklm/skills/notebooklm
 rm -rf .venv
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
@@ -396,7 +438,7 @@ Stop the copy-paste dance. Start getting accurate, grounded answers directly in 
 
 ```bash
 # Get started in 30 seconds
-cd ~/.claude/skills
+cd ~/.claude/plugins
 git clone https://github.com/PleasePrompto/notebooklm-skill notebooklm
 # Open Claude Code: "What are my skills?"
 ```

@@ -1,0 +1,1 @@
+../../notebooklm/scripts/auth_manager.py

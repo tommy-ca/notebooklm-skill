@@ -1,0 +1,18 @@
+{
+  "name": "notebooklm",
+  "version": "2.1.0",
+  "description": "Query Google NotebookLM notebooks from Claude Code for source-grounded, citation-backed answers with drastically reduced hallucinations.",
+  "author": {
+    "name": "Please Prompto!",
+    "url": "https://github.com/tommy-ca"
+  },
+  "license": "MIT",
+  "keywords": [
+    "notebooklm",
+    "google",
+    "rag",
+    "citations",
+    "browser-automation",
+    "research"
+  ]
+}
