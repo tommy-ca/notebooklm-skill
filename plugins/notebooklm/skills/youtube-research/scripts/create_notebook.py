@@ -57,7 +57,7 @@ import config
 
 
 def validate_youtube_url(url: str) -> bool:
-    """Validate that URL is a legitimate YouTube URL"""
+    """Validate that URL is a legitimate YouTube URL with strict video ID validation"""
     try:
         parsed = urlparse(url)
 
@@ -75,18 +75,24 @@ def validate_youtube_url(url: str) -> bool:
         if parsed.netloc not in allowed_domains:
             return False
 
-        # Must have video ID
+        # Extract and validate video ID
+        video_id = None
         if parsed.netloc == 'youtu.be':
             # Format: https://youtu.be/VIDEO_ID
-            if not re.match(r'^/[A-Za-z0-9_-]{11}$', parsed.path):
-                return False
+            match = re.match(r'^/([A-Za-z0-9_-]{11})/?$', parsed.path)
+            if match:
+                video_id = match.group(1)
         else:
             # Format: https://youtube.com/watch?v=VIDEO_ID
-            if 'watch' not in parsed.path and 'v=' not in parsed.query:
-                return False
+            from urllib.parse import parse_qs
+            query_params = parse_qs(parsed.query)
+            if 'v' in query_params:
+                potential_id = query_params['v'][0]
+                if re.match(r'^[A-Za-z0-9_-]{11}$', potential_id):
+                    video_id = potential_id
 
-        return True
-    except (ValueError, AttributeError, TypeError):
+        return video_id is not None
+    except (ValueError, AttributeError, TypeError, KeyError):
         return False
 
 
