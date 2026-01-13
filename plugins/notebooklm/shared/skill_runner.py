@@ -4,17 +4,25 @@ Shared Skill Runner
 Eliminates code duplication across skill run.py files
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import subprocess
 from pathlib import Path
-from typing import Set
+from typing import NoReturn
+
+__all__ = ["SkillRunner"]
 
 
 class SkillRunner:
     """Universal runner for skill scripts with venv management and security validation"""
 
-    def __init__(self, skill_name: str, allowed_scripts: Set[str]):
+    skill_name: str
+    allowed_scripts: set[str]
+    skill_dir: Path
+
+    def __init__(self, skill_name: str, allowed_scripts: set[str]) -> None:
         """
         Initialize skill runner
 
@@ -28,7 +36,8 @@ class SkillRunner:
 
     def get_venv_python(self) -> Path:
         """Get the virtual environment Python executable"""
-        venv_dir = self.skill_dir / ".venv"
+        venv_dir: Path = self.skill_dir / ".venv"
+        venv_python: Path
 
         if os.name == 'nt':  # Windows
             venv_python = venv_dir / "Scripts" / "python.exe"
@@ -37,10 +46,10 @@ class SkillRunner:
 
         return venv_python
 
-    def ensure_venv(self) -> Path:
+    def ensure_venv(self) -> Path | NoReturn:
         """Ensure virtual environment exists"""
-        venv_dir = self.skill_dir / ".venv"
-        setup_script = self.skill_dir / "scripts" / "setup_environment.py"
+        venv_dir: Path = self.skill_dir / ".venv"
+        setup_script: Path = self.skill_dir / "scripts" / "setup_environment.py"
 
         # Check if venv exists
         if not venv_dir.exists():
@@ -48,7 +57,9 @@ class SkillRunner:
             print("   This may take a minute...")
 
             # Run setup with system Python
-            result = subprocess.run([sys.executable, str(setup_script)])
+            result: subprocess.CompletedProcess[bytes] = subprocess.run(
+                [sys.executable, str(setup_script)]
+            )
             if result.returncode != 0:
                 print("❌ Failed to set up environment")
                 sys.exit(1)
@@ -57,7 +68,7 @@ class SkillRunner:
 
         return self.get_venv_python()
 
-    def validate_script(self, script_name: str) -> Path:
+    def validate_script(self, script_name: str) -> Path | NoReturn:
         """
         Validate and resolve script path
 
@@ -86,8 +97,8 @@ class SkillRunner:
             sys.exit(1)
 
         # Get script path
-        script_path = (self.skill_dir / "scripts" / script_name).resolve()
-        scripts_dir = (self.skill_dir / "scripts").resolve()
+        script_path: Path = (self.skill_dir / "scripts" / script_name).resolve()
+        scripts_dir: Path = (self.skill_dir / "scripts").resolve()
 
         # Security: Verify path is within scripts directory (prevent path traversal)
         if not str(script_path).startswith(str(scripts_dir)):
@@ -103,7 +114,7 @@ class SkillRunner:
 
         return script_path
 
-    def run(self, script_name: str, script_args: list) -> int:
+    def run(self, script_name: str, script_args: list[str]) -> int:
         """
         Execute script in venv
 
@@ -115,21 +126,21 @@ class SkillRunner:
             Exit code from script
         """
         # Validate script and get path
-        script_path = self.validate_script(script_name)
+        script_path: Path = self.validate_script(script_name)
 
         # Ensure venv exists and get Python executable
-        venv_python = self.ensure_venv()
+        venv_python: Path = self.ensure_venv()
 
         # Build command
-        cmd = [str(venv_python), str(script_path)] + script_args
+        cmd: list[str] = [str(venv_python), str(script_path)] + script_args
 
         # Run the script
         try:
-            result = subprocess.run(cmd)
+            result: subprocess.CompletedProcess[bytes] = subprocess.run(cmd)
             return result.returncode
         except KeyboardInterrupt:
             print("\n⚠️ Interrupted by user")
             return 130
-        except Exception as e:
+        except OSError as e:
             print(f"❌ Error: {e}")
             return 1

@@ -5,14 +5,17 @@ Validates NotebookLM URLs to prevent SSRF and other security vulnerabilities.
 Only allows HTTPS URLs to notebooklm.google.com with valid notebook paths.
 """
 
-import re
+from __future__ import annotations
+
 import logging
+import re
+from typing import ClassVar, Final, Pattern
 from urllib.parse import urlparse
-from typing import Optional
 
 
 class URLValidationError(ValueError):
     """Raised when URL fails validation"""
+
     pass
 
 
@@ -23,9 +26,9 @@ class NotebookLMURLValidator:
     Only allows HTTPS URLs to notebooklm.google.com with valid notebook paths
     """
 
-    ALLOWED_SCHEME = 'https'
-    ALLOWED_DOMAIN = 'notebooklm.google.com'
-    VALID_PATH_PATTERN = re.compile(r'^/notebook/[a-f0-9-]+(/.*)?$')
+    ALLOWED_SCHEME: ClassVar[str] = "https"
+    ALLOWED_DOMAIN: ClassVar[str] = "notebooklm.google.com"
+    VALID_PATH_PATTERN: ClassVar[Pattern[str]] = re.compile(r"^/notebook/[a-f0-9-]+(/.*)?$")
 
     @classmethod
     def validate(cls, url: str) -> str:

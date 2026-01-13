@@ -7,11 +7,9 @@ Based on the MCP server implementation
 
 import json
 import argparse
-import uuid
-import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any
 from datetime import datetime
 
 # Add shared directory to path for url_validator
@@ -23,26 +21,32 @@ from url_validator import NotebookLMURLValidator, URLValidationError
 class NotebookLibrary:
     """Manages a collection of NotebookLM notebooks with metadata"""
 
-    def __init__(self):
+    # Class attributes with type annotations
+    data_dir: Path
+    library_file: Path
+    notebooks: dict[str, dict[str, Any]]
+    active_notebook_id: str | None
+
+    def __init__(self) -> None:
         """Initialize the notebook library"""
         # Store data within the skill directory
-        skill_dir = Path(__file__).parent.parent
+        skill_dir: Path = Path(__file__).parent.parent
         self.data_dir = skill_dir / "data"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         self.library_file = self.data_dir / "library.json"
-        self.notebooks: Dict[str, Dict[str, Any]] = {}
-        self.active_notebook_id: Optional[str] = None
+        self.notebooks = {}
+        self.active_notebook_id = None
 
         # Load existing library
         self._load_library()
 
-    def _load_library(self):
+    def _load_library(self) -> None:
         """Load library from disk"""
         if self.library_file.exists():
             try:
                 with open(self.library_file, 'r') as f:
-                    data = json.load(f)
+                    data: dict[str, Any] = json.load(f)
                     self.notebooks = data.get('notebooks', {})
                     self.active_notebook_id = data.get('active_notebook_id')
                     print(f"📚 Loaded library with {len(self.notebooks)} notebooks")
@@ -53,10 +57,10 @@ class NotebookLibrary:
         else:
             self._save_library()
 
-    def _save_library(self):
+    def _save_library(self) -> None:
         """Save library to disk"""
         try:
-            data = {
+            data: dict[str, Any] = {
                 'notebooks': self.notebooks,
                 'active_notebook_id': self.active_notebook_id,
                 'updated_at': datetime.now().isoformat()
@@ -71,11 +75,11 @@ class NotebookLibrary:
         url: str,
         name: str,
         description: str,
-        topics: List[str],
-        content_types: Optional[List[str]] = None,
-        use_cases: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        topics: list[str],
+        content_types: list[str] | None = None,
+        use_cases: list[str] | None = None,
+        tags: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Add a new notebook to the library
 
@@ -98,14 +102,14 @@ class NotebookLibrary:
             raise ValueError(f"Invalid NotebookLM URL: {e}")
 
         # Generate ID from name
-        notebook_id = name.lower().replace(' ', '-').replace('_', '-')
+        notebook_id: str = name.lower().replace(' ', '-').replace('_', '-')
 
         # Check for duplicates
         if notebook_id in self.notebooks:
             raise ValueError(f"Notebook with ID '{notebook_id}' already exists")
 
         # Create notebook object
-        notebook = {
+        notebook: dict[str, Any] = {
             'id': notebook_id,
             'url': validated_url,
             'name': name,
@@ -162,14 +166,14 @@ class NotebookLibrary:
     def update_notebook(
         self,
         notebook_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        topics: Optional[List[str]] = None,
-        content_types: Optional[List[str]] = None,
-        use_cases: Optional[List[str]] = None,
-        tags: Optional[List[str]] = None,
-        url: Optional[str] = None
-    ) -> Dict[str, Any]:
+        name: str | None = None,
+        description: str | None = None,
+        topics: list[str] | None = None,
+        content_types: list[str] | None = None,
+        use_cases: list[str] | None = None,
+        tags: list[str] | None = None,
+        url: str | None = None
+    ) -> dict[str, Any]:
         """
         Update notebook metadata
 

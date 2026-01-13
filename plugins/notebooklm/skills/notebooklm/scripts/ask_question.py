@@ -9,13 +9,19 @@ Implements hybrid auth approach:
 See: https://github.com/microsoft/playwright/issues/36139
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 import time
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from patchright.sync_api import sync_playwright
+
+if TYPE_CHECKING:
+    from patchright.sync_api import Page, BrowserContext, Playwright
 
 # Add parent directory to path for local imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -40,7 +46,7 @@ FOLLOW_UP_REMINDER = (
 )
 
 
-def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> str:
+def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> str | None:
     """
     Ask a question to NotebookLM
 
@@ -52,7 +58,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
     Returns:
         Answer text from NotebookLM
     """
-    auth = AuthManager()
+    auth: AuthManager = AuthManager()
 
     if not auth.is_authenticated():
         print("⚠️ Not authenticated. Run: python auth_manager.py setup")
@@ -63,13 +69,13 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
 
     # Validate URL before any browser operations (SSRF protection)
     try:
-        validated_url = NotebookLMURLValidator.validate(notebook_url)
+        validated_url: str = NotebookLMURLValidator.validate(notebook_url)
     except URLValidationError as e:
         print(f"❌ Invalid notebook URL: {e}")
         return None
 
-    playwright = None
-    context = None
+    playwright: Playwright | None = None
+    context: BrowserContext | None = None
 
     try:
         # Start playwright
@@ -87,7 +93,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         )
 
         # Navigate to notebook
-        page = context.new_page()
+        page: Page = context.new_page()
         print("  🌐 Opening notebook...")
         page.goto(validated_url, wait_until="domcontentloaded")
 
@@ -96,7 +102,7 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
 
         # Wait for query input (MCP approach)
         print("  ⏳ Waiting for query input...")
-        query_element = None
+        query_element: object | None = None
 
         for selector in QUERY_INPUT_SELECTORS:
             try:
@@ -117,9 +123,9 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
 
         # Type question (human-like, fast)
         print("  ⏳ Typing question...")
-        
+
         # Use primary selector for typing
-        input_selector = QUERY_INPUT_SELECTORS[0]
+        input_selector: str = QUERY_INPUT_SELECTORS[0]
         StealthUtils.human_type(page, input_selector, question)
 
         # Submit
@@ -132,10 +138,10 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         # Wait for response (MCP approach: poll for stable text)
         print("  ⏳ Waiting for answer...")
 
-        answer = None
-        stable_count = 0
-        last_text = None
-        deadline = time.time() + 120  # 2 minutes timeout
+        answer: str | None = None
+        stable_count: int = 0
+        last_text: str | None = None
+        deadline: float = time.time() + 120  # 2 minutes timeout
 
         while time.time() < deadline:
             # Check if NotebookLM is still thinking (most reliable indicator)
@@ -150,11 +156,11 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
             # Try to find response with MCP selectors
             for selector in RESPONSE_SELECTORS:
                 try:
-                    elements = page.query_selector_all(selector)
+                    elements: list[object] = page.query_selector_all(selector)
                     if elements:
                         # Get last (newest) response
                         latest = elements[-1]
-                        text = latest.inner_text().strip()
+                        text: str = latest.inner_text().strip()
 
                         if text:
                             if text == last_text:
@@ -202,22 +208,22 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
                 pass
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Ask NotebookLM a question')
+def main() -> int:
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(description='Ask NotebookLM a question')
 
     parser.add_argument('--question', required=True, help='Question to ask')
     parser.add_argument('--notebook-url', help='NotebookLM notebook URL')
     parser.add_argument('--notebook-id', help='Notebook ID from library')
     parser.add_argument('--show-browser', action='store_true', help='Show browser')
 
-    args = parser.parse_args()
+    args: argparse.Namespace = parser.parse_args()
 
     # Resolve notebook URL
-    notebook_url = args.notebook_url
+    notebook_url: str | None = args.notebook_url
 
     if not notebook_url and args.notebook_id:
-        library = NotebookLibrary()
-        notebook = library.get_notebook(args.notebook_id)
+        library: NotebookLibrary = NotebookLibrary()
+        notebook: dict[str, str] | None = library.get_notebook(args.notebook_id)
         if notebook:
             notebook_url = notebook['url']
         else:
@@ -227,17 +233,17 @@ def main():
     if not notebook_url:
         # Check for active notebook first
         library = NotebookLibrary()
-        active = library.get_active_notebook()
+        active: dict[str, str] | None = library.get_active_notebook()
         if active:
             notebook_url = active['url']
             print(f"📚 Using active notebook: {active['name']}")
         else:
             # Show available notebooks
-            notebooks = library.list_notebooks()
+            notebooks: list[dict[str, str]] = library.list_notebooks()
             if notebooks:
                 print("\n📚 Available notebooks:")
                 for nb in notebooks:
-                    mark = " [ACTIVE]" if nb.get('id') == library.active_notebook_id else ""
+                    mark: str = " [ACTIVE]" if nb.get('id') == library.active_notebook_id else ""
                     print(f"  {nb['id']}: {nb['name']}{mark}")
                 print("\nSpecify with --notebook-id or set active:")
                 print("python scripts/run.py notebook_manager.py activate --id ID")
@@ -247,7 +253,7 @@ def main():
             return 1
 
     # Ask the question
-    answer = ask_notebooklm(
+    answer: str | None = ask_notebooklm(
         question=args.question,
         notebook_url=notebook_url,
         headless=not args.show_browser

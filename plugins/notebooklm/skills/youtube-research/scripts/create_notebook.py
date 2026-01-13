@@ -9,11 +9,14 @@ Usage:
     python create_notebook.py --youtube-url URL [--research TEXT] [--generate-audio] [--show-browser]
 """
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import sys
 import re
 from pathlib import Path
+from typing import NoReturn
 from urllib.parse import urlparse
 
 # Import shared utilities from shared module
@@ -67,10 +70,10 @@ def validate_youtube_url(url: str) -> bool:
 
 async def create_notebook_from_youtube(
     youtube_url: str,
-    research_text: str = None,
+    research_text: str | None = None,
     generate_audio: bool = False,
     show_browser: bool = False
-):
+) -> str:
     """
     Create a NotebookLM notebook from a YouTube video.
 
@@ -179,8 +182,8 @@ async def create_notebook_from_youtube(
             await page.close()
 
 
-def main():
-    parser = argparse.ArgumentParser(
+def main() -> None:
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Create NotebookLM notebook from YouTube video"
     )
     parser.add_argument(

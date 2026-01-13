@@ -17,9 +17,9 @@ import shutil
 import re
 import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 
-from patchright.sync_api import sync_playwright, BrowserContext
+from patchright.sync_api import sync_playwright, BrowserContext, Playwright
 
 # Import shared utilities
 from .browser_utils import BrowserFactory
@@ -36,8 +36,8 @@ class AuthManager:
     - Account switching
     """
 
-    def __init__(self, data_dir: Path = None, browser_state_dir: Path = None,
-                 state_file: Path = None, auth_info_file: Path = None):
+    def __init__(self, data_dir: Optional[Path] = None, browser_state_dir: Optional[Path] = None,
+                 state_file: Optional[Path] = None, auth_info_file: Optional[Path] = None) -> None:
         """Initialize the authentication manager
 
         Args:
@@ -179,7 +179,7 @@ class AuthManager:
                 except Exception:
                     pass
 
-    def _save_browser_state(self, context: BrowserContext):
+    def _save_browser_state(self, context: BrowserContext) -> None:
         """Save browser state to disk"""
         try:
             # Save storage state (cookies, localStorage)
@@ -189,7 +189,7 @@ class AuthManager:
             print(f"  ❌ Failed to save browser state: {e}")
             raise
 
-    def _save_auth_info(self):
+    def _save_auth_info(self) -> None:
         """Save authentication metadata"""
         try:
             info = {

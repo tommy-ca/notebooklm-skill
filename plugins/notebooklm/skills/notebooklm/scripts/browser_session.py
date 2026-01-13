@@ -5,9 +5,11 @@ Individual browser session for persistent NotebookLM conversations
 Based on the original NotebookLM API implementation
 """
 
+from __future__ import annotations
+
 import time
 import sys
-from typing import Any, Dict, Optional
+from typing import Any
 from pathlib import Path
 
 from patchright.sync_api import BrowserContext, Page
@@ -29,7 +31,16 @@ class BrowserSession:
     previous messages.
     """
 
-    def __init__(self, session_id: str, context: BrowserContext, notebook_url: str):
+    id: str
+    created_at: float
+    last_activity: float
+    message_count: int
+    notebook_url: str
+    context: BrowserContext
+    page: Page | None
+    stealth: StealthUtils
+
+    def __init__(self, session_id: str, context: BrowserContext, notebook_url: str) -> None:
         """
         Initialize a new browser session
 
@@ -50,7 +61,7 @@ class BrowserSession:
         # Initialize the session
         self._initialize()
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         """Initialize the browser session and navigate to NotebookLM"""
         print(f"🚀 Creating session {self.id}...")
 
@@ -81,7 +92,7 @@ class BrowserSession:
                 self.page.close()
             raise
 
-    def _wait_for_ready(self):
+    def _wait_for_ready(self) -> None:
         """Wait for NotebookLM page to be ready"""
         try:
             # Wait for chat input
@@ -90,7 +101,7 @@ class BrowserSession:
             # Try alternative selector
             self.page.wait_for_selector('textarea[aria-label="Feld für Anfragen"]', timeout=5000, state="visible")
 
-    def ask(self, question: str) -> Dict[str, Any]:
+    def ask(self, question: str) -> dict[str, Any]:
         """
         Ask a question in this session
 
@@ -156,7 +167,7 @@ class BrowserSession:
                 "session_id": self.id
             }
 
-    def _snapshot_latest_response(self) -> Optional[str]:
+    def _snapshot_latest_response(self) -> str | None:
         """Get the current latest response text"""
         try:
             # Use correct NotebookLM selector
@@ -167,7 +178,7 @@ class BrowserSession:
             pass
         return None
 
-    def _wait_for_latest_answer(self, previous_answer: Optional[str], timeout: int = 120) -> str:
+    def _wait_for_latest_answer(self, previous_answer: str | None, timeout: int = 120) -> str:
         """Wait for and extract the new answer"""
         start_time = time.time()
         last_candidate = None
