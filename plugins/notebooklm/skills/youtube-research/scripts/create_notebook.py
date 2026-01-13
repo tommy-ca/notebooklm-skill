@@ -16,8 +16,8 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-# Import shared utilities from notebooklm skill
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "notebooklm" / "scripts"))
+# Import shared utilities from shared module
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "shared"))
 from browser_utils import BrowserFactory, StealthUtils
 from auth_manager import AuthManager
 

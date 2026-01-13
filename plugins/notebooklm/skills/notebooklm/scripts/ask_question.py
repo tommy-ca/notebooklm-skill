@@ -17,13 +17,16 @@ from pathlib import Path
 
 from patchright.sync_api import sync_playwright
 
-# Add parent directory to path
+# Add parent directory to path for local imports
 sys.path.insert(0, str(Path(__file__).parent))
+# Add shared directory to path for shared utilities
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "shared"))
 
 from auth_manager import AuthManager
+from browser_utils import BrowserFactory, StealthUtils
+from url_validator import NotebookLMURLValidator, URLValidationError
 from notebook_manager import NotebookLibrary
 from config import QUERY_INPUT_SELECTORS, RESPONSE_SELECTORS
-from browser_utils import BrowserFactory, StealthUtils
 
 
 # Follow-up reminder (adapted from MCP server for stateless operation)
@@ -58,6 +61,13 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
     print(f"💬 Asking: {question}")
     print(f"📚 Notebook: {notebook_url}")
 
+    # Validate URL before any browser operations (SSRF protection)
+    try:
+        validated_url = NotebookLMURLValidator.validate(notebook_url)
+    except URLValidationError as e:
+        print(f"❌ Invalid notebook URL: {e}")
+        return None
+
     playwright = None
     context = None
 
@@ -66,15 +76,20 @@ def ask_notebooklm(question: str, notebook_url: str, headless: bool = True) -> s
         playwright = sync_playwright().start()
 
         # Launch persistent browser context using factory
+        from config import BROWSER_PROFILE_DIR, STATE_FILE, BROWSER_ARGS, USER_AGENT
         context = BrowserFactory.launch_persistent_context(
             playwright,
-            headless=headless
+            headless=headless,
+            user_data_dir=str(BROWSER_PROFILE_DIR),
+            state_file=STATE_FILE,
+            browser_args=BROWSER_ARGS,
+            user_agent=USER_AGENT
         )
 
         # Navigate to notebook
         page = context.new_page()
         print("  🌐 Opening notebook...")
-        page.goto(notebook_url, wait_until="domcontentloaded")
+        page.goto(validated_url, wait_until="domcontentloaded")
 
         # Wait for NotebookLM
         page.wait_for_url(re.compile(r"^https://notebooklm\.google\.com/"), timeout=10000)

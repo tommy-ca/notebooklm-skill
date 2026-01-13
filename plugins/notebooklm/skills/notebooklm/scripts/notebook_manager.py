@@ -9,9 +9,15 @@ import json
 import argparse
 import uuid
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+
+# Add shared directory to path for url_validator
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "shared"))
+
+from url_validator import NotebookLMURLValidator, URLValidationError
 
 
 class NotebookLibrary:
@@ -85,6 +91,12 @@ class NotebookLibrary:
         Returns:
             The created notebook object
         """
+        # Validate URL before adding to library (SSRF protection)
+        try:
+            validated_url = NotebookLMURLValidator.validate(url)
+        except URLValidationError as e:
+            raise ValueError(f"Invalid NotebookLM URL: {e}")
+
         # Generate ID from name
         notebook_id = name.lower().replace(' ', '-').replace('_', '-')
 
@@ -95,7 +107,7 @@ class NotebookLibrary:
         # Create notebook object
         notebook = {
             'id': notebook_id,
-            'url': url,
+            'url': validated_url,
             'name': name,
             'description': description,
             'topics': topics,
@@ -173,6 +185,14 @@ class NotebookLibrary:
 
         notebook = self.notebooks[notebook_id]
 
+        # Validate URL if being updated (SSRF protection)
+        if url is not None:
+            try:
+                validated_url = NotebookLMURLValidator.validate(url)
+                notebook['url'] = validated_url
+            except URLValidationError as e:
+                raise ValueError(f"Invalid NotebookLM URL: {e}")
+
         # Update fields if provided
         if name is not None:
             notebook['name'] = name
@@ -186,8 +206,6 @@ class NotebookLibrary:
             notebook['use_cases'] = use_cases
         if tags is not None:
             notebook['tags'] = tags
-        if url is not None:
-            notebook['url'] = url
 
         notebook['updated_at'] = datetime.now().isoformat()
 

@@ -21,11 +21,8 @@ from typing import Optional, Dict, Any
 
 from patchright.sync_api import sync_playwright, BrowserContext
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
-
-from config import BROWSER_STATE_DIR, STATE_FILE, AUTH_INFO_FILE, DATA_DIR
-from browser_utils import BrowserFactory
+# Import shared utilities
+from .browser_utils import BrowserFactory
 
 
 class AuthManager:
@@ -39,15 +36,38 @@ class AuthManager:
     - Account switching
     """
 
-    def __init__(self):
-        """Initialize the authentication manager"""
-        # Ensure directories exist
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        BROWSER_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    def __init__(self, data_dir: Path = None, browser_state_dir: Path = None,
+                 state_file: Path = None, auth_info_file: Path = None):
+        """Initialize the authentication manager
 
-        self.state_file = STATE_FILE
-        self.auth_info_file = AUTH_INFO_FILE
-        self.browser_state_dir = BROWSER_STATE_DIR
+        Args:
+            data_dir: Main data directory (defaults to ~/.claude/skills/notebooklm/data)
+            browser_state_dir: Browser state directory (defaults to data_dir/browser_state)
+            state_file: Browser state file (defaults to browser_state_dir/state.json)
+            auth_info_file: Auth info file (defaults to data_dir/auth_info.json)
+        """
+        # Set defaults if not provided
+        if data_dir is None:
+            data_dir = Path.home() / ".claude" / "skills" / "notebooklm" / "data"
+
+        if browser_state_dir is None:
+            browser_state_dir = data_dir / "browser_state"
+
+        if state_file is None:
+            state_file = browser_state_dir / "state.json"
+
+        if auth_info_file is None:
+            auth_info_file = data_dir / "auth_info.json"
+
+        # Ensure directories exist
+        data_dir.mkdir(parents=True, exist_ok=True)
+        browser_state_dir.mkdir(parents=True, exist_ok=True)
+
+        self.data_dir = data_dir
+        self.state_file = state_file
+        self.auth_info_file = auth_info_file
+        self.browser_state_dir = browser_state_dir
+        self.browser_profile_dir = browser_state_dir / "browser_profile"
 
     def is_authenticated(self) -> bool:
         """Check if valid authentication exists"""
@@ -106,7 +126,9 @@ class AuthManager:
             # Launch using factory
             context = BrowserFactory.launch_persistent_context(
                 playwright,
-                headless=headless
+                headless=headless,
+                user_data_dir=str(self.browser_profile_dir),
+                state_file=self.state_file
             )
 
             # Navigate to NotebookLM
@@ -284,19 +306,22 @@ class AuthManager:
                     pass
 
     @staticmethod
-    def check_auth_status():
+    def check_auth_status(state_file: Path = None):
         """
         Static method to check authentication status without context.
         Used by other scripts to verify auth before operations.
 
+        Args:
+            state_file: Path to state.json file (defaults to standard location)
+
         Returns:
             Dict with 'authenticated' bool and other auth info
         """
-        from pathlib import Path
         import json
 
-        # Check if state file exists
-        state_file = Path(__file__).parent.parent / "data" / "auth_state.json"
+        # Use default location if not provided
+        if state_file is None:
+            state_file = Path.home() / ".claude" / "skills" / "notebooklm" / "data" / "browser_state" / "state.json"
 
         if not state_file.exists():
             return {"authenticated": False}

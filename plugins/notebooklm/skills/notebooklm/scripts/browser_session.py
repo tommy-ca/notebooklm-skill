@@ -12,8 +12,10 @@ from pathlib import Path
 
 from patchright.sync_api import BrowserContext, Page
 
-# Add parent directory to path
+# Add parent directory to path for local imports
 sys.path.insert(0, str(Path(__file__).parent))
+# Add shared directory to path for shared utilities
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "shared"))
 
 from browser_utils import StealthUtils
 
