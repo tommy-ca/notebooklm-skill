@@ -283,6 +283,35 @@ class AuthManager:
                 except Exception:
                     pass
 
+    @staticmethod
+    def check_auth_status():
+        """
+        Static method to check authentication status without context.
+        Used by other scripts to verify auth before operations.
+
+        Returns:
+            Dict with 'authenticated' bool and other auth info
+        """
+        from pathlib import Path
+        import json
+
+        # Check if state file exists
+        state_file = Path(__file__).parent.parent / "data" / "auth_state.json"
+
+        if not state_file.exists():
+            return {"authenticated": False}
+
+        try:
+            with open(state_file, 'r') as f:
+                state = json.load(f)
+                return {
+                    "authenticated": True,
+                    "cookies_count": len(state.get('cookies', [])),
+                    "has_storage": bool(state.get('origins', []))
+                }
+        except Exception:
+            return {"authenticated": False}
+
 
 def main():
     """Command-line interface for authentication management"""

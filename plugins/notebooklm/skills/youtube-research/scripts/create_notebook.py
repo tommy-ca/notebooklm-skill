@@ -17,6 +17,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
+class SecurityError(Exception):
+    """Raised when security validation fails"""
+    pass
+
+
 def verify_symlink_safety(symlink_path: Path) -> bool:
     """
     Verify symlink points to expected location to prevent path traversal attacks.
@@ -81,7 +86,7 @@ def validate_youtube_url(url: str) -> bool:
                 return False
 
         return True
-    except:
+    except (ValueError, AttributeError, TypeError):
         return False
 
 
