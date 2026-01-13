@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 priority: p2
 issue_id: 012
 tags: [architecture, symlinks, complexity, windows-compatibility]

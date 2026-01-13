@@ -16,38 +16,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-
-class SecurityError(Exception):
-    """Raised when security validation fails"""
-    pass
-
-
-def verify_symlink_safety(symlink_path: Path) -> bool:
-    """
-    Verify symlink points to expected location to prevent path traversal attacks.
-
-    Args:
-        symlink_path: Path to verify
-
-    Returns:
-        bool: True if safe, False if potentially malicious
-    """
-    if not symlink_path.is_symlink():
-        return True
-
-    target = symlink_path.resolve()
-    expected_base = symlink_path.parent.parent.parent / "notebooklm" / "scripts"
-
-    return str(target).startswith(str(expected_base.resolve()))
-
-
-# Verify symlink safety before importing
-for script in ['__init__.py', 'auth_manager.py', 'browser_utils.py', 'setup_environment.py']:
-    script_path = Path(__file__).parent / script
-    if not verify_symlink_safety(script_path):
-        raise SecurityError(f"Symlink verification failed: {script}")
-
-# Import shared utilities from parent skill
+# Import shared utilities from notebooklm skill
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "notebooklm" / "scripts"))
 from browser_utils import BrowserFactory, StealthUtils
 from auth_manager import AuthManager
